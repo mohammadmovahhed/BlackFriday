@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="BlackFriday.Api/BlackFriday.Api.csproj" />
+  <Project Path="BlackFriday.Domain/BlackFriday.Domain.csproj" />
+  <Project Path="BlackFriday.Infrastructure/BlackFriday.Infrastructure.csproj" />
+  <Project Path="BlackFriday.Scheduler/BlackFriday.Scheduler.csproj" />
+  <Project Path="BlackFriday.Tests/BlackFriday.Tests.csproj" />
+  <Project Path="BlackFriday.Worker/BlackFriday.Worker.csproj" />
+</Solution>

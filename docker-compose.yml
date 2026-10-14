@@ -1,0 +1,75 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    container_name: bf-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Your_Strong!Passw0rd"
+      MSSQL_PID: "Developer"
+    ports:
+      - "14333:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Your_Strong!Passw0rd' -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:latest
+    container_name: bf-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: BlackFriday.Api/Dockerfile
+    container_name: bf-api
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__Sql: "Server=sqlserver;Database=BlackFriday;User Id=sa;Password=Your_Strong!Passw0rd;TrustServerCertificate=True"
+      ConnectionStrings__Redis: "redis:6379"
+    ports:
+      - "8080:8080"
+    depends_on:
+      sqlserver: { condition: service_healthy }
+      redis:     { condition: service_healthy }
+
+  worker:
+    build:
+      context: .
+      dockerfile: BlackFriday.Worker/Dockerfile
+    container_name: bf-worker
+    environment:
+      ConnectionStrings__Sql: "Server=sqlserver;Database=BlackFriday;User Id=sa;Password=Your_Strong!Passw0rd;TrustServerCertificate=True"
+      ConnectionStrings__Redis: "redis:6379"
+    depends_on:
+      sqlserver: { condition: service_healthy }
+      redis:     { condition: service_healthy }
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: BlackFriday.Scheduler/Dockerfile
+    container_name: bf-scheduler
+    environment:
+      ConnectionStrings__Sql: "Server=sqlserver;Database=BlackFriday;User Id=sa;Password=Your_Strong!Passw0rd;TrustServerCertificate=True"
+      ConnectionStrings__Redis: "redis:6379"
+    depends_on:
+      sqlserver: { condition: service_healthy }
+      redis:     { condition: service_healthy }
+
+volumes:
+  mssql-data:
+  redis-data:
